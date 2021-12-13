@@ -2,8 +2,10 @@ import pygame
 import random
 
 pygame.init()
+scale = 1
 pygame.display.set_caption("coso")
-font = pygame.font.SysFont("consolas",12)
+font = pygame.font.SysFont("consolas", 12*scale)
+
 class Color:
     def __init__(self, r, g, b):
         self.r = r
@@ -21,6 +23,7 @@ class Coor:
         self.vel = vel
     def coor(self):
         return (self.x, self.y, self.w, self.w)
+#hay un error porque pone dos self.w
     def hit(self):
         return (self.x, self.y, self.x + self.w, self.y + self.w)
     
@@ -32,27 +35,38 @@ class Ventana:
 
 def img(png):
     return pygame.image.load('{}.png'.format(png))
+def trs(png,xy):
+    return pygame.transform.scale(png,xy)
 
 negro = Color(7, 24, 33)
 oscuro = Color(48, 104, 80)
 claro = Color(134, 192, 108)
 blanco = Color(224, 248, 207)
 
-win = Ventana(160, 144)
-player = Coor(72, 64, 16, 16, 1)
-pokeball = Coor(random.randint(0, 148), random.randint(0, 132), 12, 12)
+win = Ventana(160*scale, 144*scale)
+player = Coor(72*scale, 64*scale, 16*scale, 16*scale, 1*scale)
+pokeball = Coor(random.randint(0, 148*scale), random.randint(0, 132*scale), 12*scale, 12*scale)
 
-pk = (img('pk0'),img('pk1'),img('pk2'),img('pk3'),img('pk4'),img('pk5'),
-      img('pk6'),img('pk7'),img('pk8'),img('pk9'),img('pk10'),img('pk11'))
+pk = [img('pk0'),img('pk1'),img('pk2'),img('pk3'),img('pk4'),img('pk5'),
+      img('pk6'),img('pk7'),img('pk8'),img('pk9'),img('pk10'),img('pk11')]
+fondo = [img('bg'),img('bg1'),img('bg2'),img('bg3'),img('bg4')]
+
 ball = img('ball')
-bg = img('bg')
+bg = fondo[2]
+bg = trs(bg,(win.x,win.y))
+ball = trs(ball,(12*scale,12*scale))
+
+for w in range(len(pk)):
+    pk[w] = trs(pk[w],(16*scale,16*scale))
 clock = pygame.time.Clock()
 
 def Sprite(img,coor):
     win.win.blit(img, coor)
     
-def draw(anim, puntaje, time):
-    Sprite(bg,(0,0))
+def draw(anim, puntaje, time, bac):
+    bg = fondo[bac]
+    bg = trs(bg,(win.x,win.y))
+    Sprite(bg,(0,0,win.x*scale,win.y*scale))
     if puntaje > 9:
         ui = font.render("Score: {} Time: {}".format(puntaje, time), True, negro.color())
     else:
@@ -82,19 +96,6 @@ def comp(a,b):
         comp = False
     return comp
 
-def paused():
-    pause = True
-    while pause:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_SPACE]:
-            pause = False
-        clock.tick(15)
-    return pause
-
 def runtime(limite):
     start = pygame.time.get_ticks()
     run = True
@@ -108,25 +109,26 @@ def runtime(limite):
     y = False
     puntaje = 0
     seconds = 0
+    back = 2
     while run:
         seconds = (pygame.time.get_ticks() - start) // 1000
-        #seconds += clock.tick()/180
         phit = player.hit()
         bhit = pokeball.hit()
         if comp(phit, bhit):
             puntaje += 1
-            pokeball.x = random.randint(0, 148)
-            pokeball.y = random.randint(0, 132)   
+            pokeball.x = random.randint(0, 148*scale)
+            pokeball.y = random.randint(10*scale, 132*scale)
+            limite+=1
+            if puntaje%10==0:
+                back = random.randint(0,4)
         clock.tick(60)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 puntaje = -1
                 run = False
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_0:
+                if event.key == pygame.K_0 or event.key == pygame.K_SPACE:
                     run = False
-                    #while paused():
-                     #   pygame.display.update()
         keys = pygame.key.get_pressed()
         if (keys[pygame.K_LEFT] and player.x > 0) and not (keys[pygame.K_UP] or keys[pygame.K_DOWN]):
             player.x -= player.vel
@@ -144,7 +146,7 @@ def runtime(limite):
                 i=5
             down = False
             up = False
-        if (keys[pygame.K_UP] and player.y > 0) and not (keys[pygame.K_RIGHT] or keys[pygame.K_LEFT]):
+        if (keys[pygame.K_UP] and player.y > 10*scale) and not (keys[pygame.K_RIGHT] or keys[pygame.K_LEFT]):
             player.y -= player.vel
             if x:
                 i=7
@@ -176,7 +178,7 @@ def runtime(limite):
         if seconds > limite:
             seconds = 0
             run = False
-        draw(i, puntaje, limite - seconds//1)
+        draw(i, puntaje, limite - seconds//1, back)
         c += 1
         if c>30:
             y = not y
@@ -187,11 +189,14 @@ def runtime(limite):
 def gameover(puntaje):
     correr = True
     fin = True
+    bg = fondo[4]
+    bg = trs(bg,(win.x,win.y))
     while correr:
         clock.tick(10)
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
-                correr = False
+                if (event.key != pygame.K_UP) and (event.key != pygame.K_DOWN) and (event.key != pygame.K_RIGHT) and (event.key != pygame.K_LEFT):
+                    correr = False
             if event.type == pygame.QUIT:
                 fin = False
                 correr = False
@@ -199,13 +204,27 @@ def gameover(puntaje):
             puntaje = 0    
         ui = font.render("Final score: {}".format(puntaje), True, negro.color())
         playagain = font.render("Continue? press any key", True, negro.color())
-        Sprite(bg,(0, 0))
-        Sprite(playagain, (0,90,1,1))
-        Sprite(ui,(30, 72, 16, 16))
+        Sprite(bg,(0, 0,win.x*scale,win.y*scale))
+        Sprite(playagain, (0,90*scale,1*scale,1*scale))
+        Sprite(ui,(30*scale, 72*scale, 16*scale, 16*scale))
         pygame.display.update()
     return fin
+
+def title():
+    run = True
+    title = img('title')
+    title = trs(title,(win.x,win.y))
+    while run:
+        clock.tick(10)
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                run = False
+        Sprite(title,(0,0,win.x*scale,win.y*scale))
+        pygame.display.update()
+
 def main():
     correrse = True
+    title()
     while correrse:
         puntaje = runtime(30)
         if puntaje == -1:
@@ -213,5 +232,6 @@ def main():
         fin = gameover(puntaje)
         if not fin:
             correrse = False
+
 main()
 pygame.quit()
