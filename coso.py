@@ -77,24 +77,10 @@ def draw(anim, puntaje, time, bac):
     pygame.display.update()
     
 def comp(a,b):
-    comp = False
-    if (a[0] < b[0]) and (a[2] > b[0]):
-        if (a[1] < b[1]) and (b[1] < a[3]):
-            comp = True
-        elif (a[1] < b[3]) and (b[3] < a[3]):
-            comp = True
-        else:
-            comp = False
-    elif (a[0] < b[2]) and (a[2] > b[2]):
-        if (a[1] < b[1]) and (b[1] < a[3]):
-            comp = True
-        elif (a[1] < b[3]) and (b[3] < a[3]):
-            comp = True
-        else:
-            comp = False
-    else:
-        comp = False
-    return comp
+    return (
+        (a[0] < b[0] < a[2] or a[0] < b[2] < a[2]) 
+        and (a[1] < b[1] < a[3] or a[1] < b[3] < a[3])
+    )
 
 def runtime(limite):
     start = pygame.time.get_ticks()
